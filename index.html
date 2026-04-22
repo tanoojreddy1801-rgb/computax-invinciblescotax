@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IC-KS Secure Access</title>
+  <title>IC-KS Login Redirect</title>
 
   <style>
     :root {
@@ -33,7 +33,7 @@
         radial-gradient(circle at 100% 10%, rgba(126, 215, 193, 0.22), transparent 24%),
         radial-gradient(circle at 70% 100%, rgba(246, 183, 200, 0.18), transparent 24%),
         linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 52%, var(--bg-3) 100%);
-      overflow: hidden;
+      overflow-x: hidden;
     }
 
     .navbar {
@@ -103,12 +103,6 @@
       text-transform: uppercase;
     }
 
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
     .nav-pill {
       padding: 10px 14px;
       border-radius: 999px;
@@ -120,26 +114,6 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .nav-btn {
-      height: 42px;
-      padding: 0 16px;
-      border: none;
-      border-radius: 14px;
-      cursor: pointer;
-      font: inherit;
-      font-weight: 700;
-      color: #fff;
-      background: linear-gradient(135deg, #5b8def, #78adff);
-      box-shadow: var(--shadow-sm);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-    }
-
-    .nav-btn:hover,
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.03);
-    }
-
     @keyframes shimmer {
       0% { background-position: 0% center; }
       100% { background-position: 200% center; }
@@ -148,7 +122,7 @@
     .container {
       max-width: 1380px;
       margin: 0 auto;
-      padding: 28px 22px;
+      padding: 28px 22px 40px;
     }
 
     .panel {
@@ -239,17 +213,25 @@
         0 10px 24px rgba(141, 175, 224, 0.12);
     }
 
-    .btn-primary {
+    button {
       height: 46px;
       padding: 0 18px;
       border: none;
       border-radius: 15px;
       cursor: pointer;
       font-weight: 700;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.03);
+    }
+
+    .btn-primary {
       color: #fff;
       background: linear-gradient(135deg, #5b8def, #78adff);
-      box-shadow: var(--shadow-sm);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     }
 
     .status-message {
@@ -262,46 +244,10 @@
     .status-message.error { color: #c45d73; }
     .status-message.success { color: #2f8d6a; }
 
-    .hidden {
-      display: none !important;
-    }
-
-    .iframe-wrap {
-      height: calc(100vh - 90px);
-      padding: 0 22px 22px;
-    }
-
-    .iframe-shell {
-      height: 100%;
-      border-radius: 22px;
-      overflow: hidden;
-      border: 1px solid rgba(197, 214, 238, 0.55);
-      box-shadow: var(--shadow-lg);
-      background: rgba(255,255,255,0.9);
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-    }
-
-    .iframe-note {
-      padding: 12px 22px 0;
-      color: #9a6b2f;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
     @media (max-width: 700px) {
-      .container { padding: 16px 14px 24px; }
+      .container { padding: 16px 14px 28px; }
       .navbar { padding: 14px; }
       .panel { padding: 18px; }
-      .iframe-wrap {
-        padding: 0 14px 14px;
-        height: calc(100vh - 82px);
-      }
     }
   </style>
 </head>
@@ -311,22 +257,18 @@
       <div class="brand-mark"></div>
       <div class="brand-text">
         <span class="logo">IC-KS</span>
-        <span class="logo-sub">Secure Employee Access</span>
+        <span class="logo-sub">CRM System</span>
       </div>
     </div>
-
-    <div class="nav-right">
-      <div id="navUser" class="nav-pill hidden"></div>
-      <button id="logoutBtn" class="nav-btn hidden">Logout</button>
-    </div>
+    <div class="nav-pill">Secure Redirect Login</div>
   </div>
 
-  <div id="loginView" class="container">
+  <div class="container">
     <div class="panel hero-login">
       <div class="section-head">
         <div class="section-head-left">
           <h1>Welcome Back</h1>
-          <div class="subtle">Login to securely access the employee portal inside this page.</div>
+          <div class="subtle">Login successfully and you will be redirected automatically to the destination portal.</div>
         </div>
         <div class="chip">Secure Login</div>
       </div>
@@ -340,27 +282,9 @@
     </div>
   </div>
 
-  <div id="appView" class="hidden">
-    <div class="iframe-note hidden" id="iframeNote">
-      If the portal does not load below, the destination site is blocking iframe embedding.
-    </div>
-    <div class="iframe-wrap">
-      <div class="iframe-shell">
-        <iframe
-          id="portalFrame"
-          title="Employee Portal"
-          src=""
-          referrerpolicy="strict-origin-when-cross-origin"
-          allowfullscreen>
-        </iframe>
-      </div>
-    </div>
-  </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCsxAw40sFLw00PtEas3cvzRMEjkDZ9NJE",
@@ -370,20 +294,11 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
 
-    const loginView = document.getElementById("loginView");
-    const appView = document.getElementById("appView");
     const loginBtn = document.getElementById("loginBtn");
     const loginEmail = document.getElementById("loginEmail");
     const loginPass = document.getElementById("loginPass");
     const loginStatus = document.getElementById("loginStatus");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const navUser = document.getElementById("navUser");
-    const portalFrame = document.getElementById("portalFrame");
-    const iframeNote = document.getElementById("iframeNote");
-
-    const DESTINATION_URL = "https://invinciblescotax.compu.tax/";
 
     function setStatus(message = "", type = "") {
       loginStatus.textContent = message;
@@ -393,13 +308,6 @@
     function setLoading(isLoading) {
       loginBtn.disabled = isLoading;
       loginBtn.textContent = isLoading ? "Signing In..." : "Login";
-    }
-
-    async function getRoleByEmail(email) {
-      const ref = doc(db, "roles", email.toLowerCase());
-      const snap = await getDoc(ref);
-      if (!snap.exists()) return null;
-      return snap.data();
     }
 
     async function doLogin() {
@@ -413,7 +321,7 @@
 
       try {
         setLoading(true);
-        setStatus("Checking your access...", "success");
+        setStatus("Logging in...", "success");
         await signInWithEmailAndPassword(auth, email, password);
       } catch (error) {
         setStatus(error.message || "Login failed.", "error");
@@ -421,42 +329,7 @@
       }
     }
 
-    async function showApp(user) {
-      const email = user.email.toLowerCase();
-      const roleData = await getRoleByEmail(email);
-
-      if (!roleData) {
-        setStatus("Role record not found in Firestore.", "error");
-        await signOut(auth);
-        return;
-      }
-
-      if (roleData.active !== true) {
-        setStatus("This account is inactive.", "error");
-        await signOut(auth);
-        return;
-      }
-
-      navUser.textContent = `${roleData.role || "user"} | ${email}`;
-      navUser.classList.remove("hidden");
-      logoutBtn.classList.remove("hidden");
-
-      loginView.classList.add("hidden");
-      appView.classList.remove("hidden");
-
-      iframeNote.classList.remove("hidden");
-      portalFrame.src = DESTINATION_URL;
-      setLoading(false);
-      setStatus("");
-    }
-
-    async function doLogout() {
-      portalFrame.src = "";
-      await signOut(auth);
-    }
-
     loginBtn.addEventListener("click", doLogin);
-    logoutBtn.addEventListener("click", doLogout);
 
     [loginEmail, loginPass].forEach((el) => {
       el.addEventListener("keydown", (e) => {
@@ -464,23 +337,10 @@
       });
     });
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        loginView.classList.remove("hidden");
-        appView.classList.add("hidden");
-        navUser.classList.add("hidden");
-        logoutBtn.classList.add("hidden");
-        portalFrame.src = "";
-        setLoading(false);
-        return;
-      }
-
-      try {
-        await showApp(user);
-      } catch (error) {
-        setStatus(error.message || "Unable to open portal.", "error");
-        setLoading(false);
-      }
+    onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      setStatus("Login successful. Redirecting...", "success");
+      window.location.href = "https://invinciblescotax.compu.tax/";
     });
   </script>
 </body>
