@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IC-KS Login Redirect</title>
+  <title>Invincibles Co Tax</title>
 
   <style>
     :root {
@@ -66,7 +66,7 @@
     }
 
     .brand-mark::after {
-      content: "IC";
+      content: "";
       position: absolute;
       inset: 0;
       display: grid;
@@ -256,11 +256,26 @@
     <div class="brand">
       <div class="brand-mark"></div>
       <div class="brand-text">
-        <span class="logo">IC-KS</span>
-        <span class="logo-sub">CRM System</span>
+        <span class="logo">Computax Redirect Window</span>
+        <span class="logo-sub">Tax and other ERP</span>
       </div>
     </div>
-    <div class="nav-pill">Secure Redirect Login</div>
+    <div style="display:flex; gap:10px; align-items:center;">
+  <div id="navUser" class="nav-pill" style="display:none;"></div>
+  <button id="logoutBtn" style="
+    display:none;
+    height:42px;
+    padding:0 16px;
+    border:none;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:700;
+    color:#fff;
+    background:linear-gradient(135deg,#5b8def,#78adff);
+  ">
+    Logout
+  </button>
+</div>
   </div>
 
   <div class="container">
@@ -283,65 +298,96 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { 
+    getAuth, 
+    signInWithEmailAndPassword, 
+    onAuthStateChanged,
+    signOut 
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCsxAw40sFLw00PtEas3cvzRMEjkDZ9NJE",
-      authDomain: "client-tracker-tool-5bdf6.firebaseapp.com",
-      projectId: "client-tracker-tool-5bdf6"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCsxAw40sFLw00PtEas3cvzRMEjkDZ9NJE",
+    authDomain: "client-tracker-tool-5bdf6.firebaseapp.com",
+    projectId: "client-tracker-tool-5bdf6"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-    const loginBtn = document.getElementById("loginBtn");
-    const loginEmail = document.getElementById("loginEmail");
-    const loginPass = document.getElementById("loginPass");
-    const loginStatus = document.getElementById("loginStatus");
+  const loginBtn = document.getElementById("loginBtn");
+  const loginEmail = document.getElementById("loginEmail");
+  const loginPass = document.getElementById("loginPass");
+  const loginStatus = document.getElementById("loginStatus");
 
-    function setStatus(message = "", type = "") {
-      loginStatus.textContent = message;
-      loginStatus.className = "status-message" + (type ? ` ${type}` : "");
+  // 🔥 ADD THESE ELEMENTS IN NAVBAR (see HTML below)
+  const logoutBtn = document.getElementById("logoutBtn");
+  const navUser = document.getElementById("navUser");
+
+  function setStatus(message = "", type = "") {
+    loginStatus.textContent = message;
+    loginStatus.className = "status-message" + (type ? ` ${type}` : "");
+  }
+
+  function setLoading(isLoading) {
+    loginBtn.disabled = isLoading;
+    loginBtn.textContent = isLoading ? "Signing In..." : "Login";
+  }
+
+  async function doLogin() {
+    const email = loginEmail.value.trim().toLowerCase();
+    const password = loginPass.value;
+
+    if (!email || !password) {
+      setStatus("Please enter both email and password.", "error");
+      return;
     }
 
-    function setLoading(isLoading) {
-      loginBtn.disabled = isLoading;
-      loginBtn.textContent = isLoading ? "Signing In..." : "Login";
+    try {
+      setLoading(true);
+      setStatus("Logging in...", "success");
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      setStatus(error.message || "Login failed.", "error");
+      setLoading(false);
     }
+  }
 
-    async function doLogin() {
-      const email = loginEmail.value.trim().toLowerCase();
-      const password = loginPass.value;
+  async function doLogout() {
+    await signOut(auth);
+    location.reload();
+  }
 
-      if (!email || !password) {
-        setStatus("Please enter both email and password.", "error");
-        return;
-      }
+  loginBtn.addEventListener("click", doLogin);
 
-      try {
-        setLoading(true);
-        setStatus("Logging in...", "success");
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (error) {
-        setStatus(error.message || "Login failed.", "error");
-        setLoading(false);
-      }
-    }
+  logoutBtn.addEventListener("click", doLogout);
 
-    loginBtn.addEventListener("click", doLogin);
-
-    [loginEmail, loginPass].forEach((el) => {
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") doLogin();
-      });
+  [loginEmail, loginPass].forEach((el) => {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doLogin();
     });
+  });
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) return;
-      setStatus("Login successful. Redirecting...", "success");
-      window.location.href = "https://invinciblescotax.compu.tax/";
-    });
-  </script>
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      logoutBtn.style.display = "none";
+      navUser.style.display = "none";
+      return;
+    }
+
+    // ✅ Show user + logout
+    navUser.textContent = user.email;
+    navUser.style.display = "block";
+    logoutBtn.style.display = "inline-block";
+
+    setStatus("Login successful. Opening portal...", "success");
+
+    // ✅ OPEN IN NEW TAB (IMPORTANT)
+    window.open("https://invinciblescotax.compu.tax/", "_blank");
+
+    setLoading(false);
+  });
+</script>
+  
 </body>
 </html>
